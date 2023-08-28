@@ -1,4 +1,5 @@
 import logging
+from os import path
 from codecs import open as codecs_open
 from typing import Dict, ItemsView, Optional, Union
 from urllib.request import urlopen
@@ -93,8 +94,22 @@ class BaseTLDSourceParser(metaclass=Registry):
         :return:
         """
         try:
-            remote_file = urlopen(cls.source_url)
             local_file_abs_path = project_dir(cls.local_path)
+            local_file_abs_count = '/tmp/update_count'
+            count = 0
+            try:
+                with open(local_file_abs_count, 'r') as f:
+                    count = int(f.read())
+                f.close()
+            except:
+                pass
+
+            if path.exists(local_file_abs_path) and count > 0:
+                return True
+
+            with open(local_file_abs_count, 'w') as f:
+                f.write('1')
+            remote_file = urlopen(cls.source_url)
             local_file = codecs_open(local_file_abs_path, "wb", encoding="utf8")
             local_file.write(remote_file.read().decode("utf8"))
             local_file.close()
